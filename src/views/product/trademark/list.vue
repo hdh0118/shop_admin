@@ -1,10 +1,13 @@
 <template>
   <div>
-    <el-button type="primary" icon="el-icon-plus" @click="visible = true"
-      >添加</el-button
-    >
+    <el-button type="primary" icon="el-icon-plus" @click="add">添加</el-button>
 
-    <el-table :data="trademarkList" border style="width: 100%; margin: 20px 0">
+    <el-table
+      :data="trademarkList"
+      v-loading="loading"
+      border
+      style="width: 100%; margin: 20px 0"
+    >
       <el-table-column
         prop="id"
         label="序号"
@@ -17,9 +20,18 @@
           <img class="trademark-img" :src="scope.row.logoUrl" alt="logo" />
         </template>
       </el-table-column>
-      <el-table-column label="操作">
-        <el-button type="warning" class="el-icon-edit">修改</el-button>
-        <el-button type="danger" class="el-icon-delete">删除</el-button>
+      <el-table-column label="操作" prop="id">
+        <template slot-scope="{ row }">
+          <el-button type="warning" class="el-icon-edit" @click="update(row)"
+            >修改</el-button
+          >
+          <el-button
+            type="danger"
+            class="el-icon-delete"
+            @click="delTrademark(row)"
+            >删除</el-button
+          >
+        </template>
       </el-table-column>
     </el-table>
 
@@ -35,7 +47,11 @@
     >
     </el-pagination>
 
-    <el-dialog title="添加品牌" :visible.sync="visible" width="50%">
+    <el-dialog
+      :title="`${trademarkForm.id ? '修改' : '添加'}品牌`"
+      :visible.sync="visible"
+      width="50%"
+    >
       <el-form
         :model="trademarkForm"
         :rules="rules"
@@ -85,16 +101,19 @@ export default {
       page: 1,
       limit: 3,
       visible: false,
+      loading: false,
       trademarkForm: {
         tmName: "",
         logoUrl: "",
       },
+      //表单校验规则
       rules: {
         tmName: [
           {
-            required: true,
-            message: "请输入品牌名称",
-            trigger: "blur",
+            validator: this.validator,
+            // required: true, //必填
+            // message: "请输入品牌名称", //提示错误信息
+            trigger: "blur", //失去焦点师，触发表单校验时机
           },
         ],
         logoUrl: [{ required: true, message: "请上传品牌LOGO" }],
@@ -102,10 +121,29 @@ export default {
     };
   },
   methods: {
+    validator(rule, value, callback) {
+      if (!value) {
+        callback(new Error("请输入品牌名称"));
+        return;
+      } else if (value.length < 2 || value.length > 10) {
+        callback(new Error("输入品牌名称的长度应为2-10位"));
+        return;
+      }
+      callback();
+    },
+
+    add() {
+      this.visible = true;
+      this.trademarkForm = {};
+    },
+    //请求分页列表数据
     async getPageList(page, limit) {
+      this.loading = true;
       try {
         const result = await this.$API.trademark.getPageList(page, limit);
+
         console.log(result);
+        //如果请求成功
         if (result.code === 200) {
           this.$message.success("获取品牌分页列表成功");
           this.limit = result.data.size; //每页显示的条数
@@ -119,26 +157,50 @@ export default {
         console.log(e);
         this.$message.error("获取品牌分页列表失败");
       }
+      this.loading = false;
     },
-
+    //提交表单校验
     submitForm(form) {
       this.$refs[form].validate(async (valid) => {
+        //表单校验通过
+        //发送请求
         if (valid) {
-          const result = await this.$API.trademark.addTrademark(
-            this.trademarkForm
-          );
+          const isUpdate = !!this.trademarkForm.id;
+          if (isUpdate) {
+            const tm = this.trademarkList.find(
+              (tm) => tm.id === this.trademarkForm.id
+            );
 
+            if (
+              tm.tmName === this.trademarkForm.tmName &&
+              tm.logoUrl === this.trademarkForm.logoUrl
+            ) {
+              this.$message.warning("不能重复");
+              return;
+            }
+          }
+
+          let result;
+          if (isUpdate) {
+            result = await this.$API.trademark.updateTrademark(
+              this.trademarkForm
+            );
+          } else {
+            result = await this.$API.trademark.addTrademark(this.trademarkForm);
+          }
+
+          //请求成功
           if (result.code === 200) {
             this.$message.success("添加品牌数据成功。。。。。");
-            this.visible = false;
-            this.getPageList(this.page, this.limit);
+            this.visible = false; //隐藏对话框
+            this.getPageList(this.page, this.limit); //重新发送请求，更新数据
           } else {
             this.$message.error(result.message);
           }
         }
       });
     },
-
+    //
     handleAvatarSuccess(res) {
       this.trademarkForm.logoUrl = res.data;
     },
@@ -153,6 +215,36 @@ export default {
         this.$message.error("上传品牌LOGO只能是 JPG 或 PNG 格式!");
       }
       return isValidType && isLt;
+    },
+
+    delTrademark(row) {
+      // console.log(id, "id");/
+      const { deleteTrademark } = this.$API.trademark;
+      this.$confirm("此操作将永久删除该文件, 是否继续?", "提示", {
+        confirmButtonText: "确定",
+        cancelButtonText: "取消",
+        type: "warning",
+      })
+        .then(async () => {
+          await deleteTrademark(row.id),
+            this.$message({
+              type: "success",
+              message: "删除成功!",
+            });
+          this.getPageList(this.page, this.limit);
+        })
+        .catch(() => {
+          this.$message({
+            type: "info",
+            message: "已取消删除",
+          });
+        });
+    },
+
+    update(row) {
+      this.visible = true;
+      this.trademarkForm = { ...row };
+      this.getPageList(this.page, this.limit);
     },
   },
   mounted() {

@@ -1,4 +1,4 @@
-import Vue from 'vue';
+import Vue from "vue";
 import {
   Pagination,
   Dialog,
@@ -49,7 +49,7 @@ import {
   // ButtonGroup,
   // TimeSelect,
   // TimePicker,
-  Popover,
+  Popover
   // Tooltip,
   // Tabs,
   // TabPane,
@@ -80,19 +80,19 @@ import {
   // Backtop,
   // PageHeader,
   // CascaderPanel,
-} from 'element-ui';
+} from "element-ui";
 
-import Scrollbar from 'element-ui/lib/scrollbar' // 必须单独引入
+import Scrollbar from "element-ui/lib/scrollbar"; // 必须单独引入
 
 // 必须定义在一个新的变量 ==> 否则会抛出_MessageBox is define的bug
-const msgbox = MessageBox 
-const { alert, confirm, prompt } = msgbox
+const msgbox = MessageBox;
+const { alert, confirm, prompt } = msgbox;
 
 // Vue.component(Pagination.name, Pagination)
 // Vue.component(Scrollbar.name, Scrollbar)
-Vue.use(Scrollbar);  // 注册单独引入的隐藏组件
-Vue.use(Drawer); 
-Vue.use(Popconfirm); 
+Vue.use(Scrollbar); // 注册单独引入的隐藏组件
+Vue.use(Drawer);
+Vue.use(Popconfirm);
 Vue.use(Pagination);
 Vue.use(Dialog);
 Vue.use(Dropdown);
