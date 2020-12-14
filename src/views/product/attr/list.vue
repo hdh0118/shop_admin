@@ -3,7 +3,13 @@
     <category @change="getAttrList" :disabled="!isShowList" />
 
     <el-card v-show="isShowList" style="margin-top: 20px">
-      <el-button type="primary" class="el-icon-plus">添加属性</el-button>
+      <el-button
+        type="primary"
+        class="el-icon-plus"
+        @click="add"
+        :disabled="!category.category3Id"
+        >添加属性</el-button
+      >
       <el-table :data="attrList" border style="width: 100%; margin: 20px 0">
         <el-table-column
           type="index"
@@ -34,12 +40,17 @@
               size="mini"
               @click="update(row)"
             ></el-button>
-            <el-button
-              type="danger"
-              icon="el-icon-delete"
-              size="mini"
-              @click="del(row)"
-            ></el-button>
+            <el-popconfirm
+              @onConfirm="del(row)"
+              :title="`确定删除 ${row.attrName} 吗？`"
+            >
+              <el-button
+                type="danger"
+                icon="el-icon-delete"
+                size="mini"
+                slot="reference"
+              ></el-button>
+            </el-popconfirm>
           </template>
         </el-table-column>
       </el-table>
@@ -51,7 +62,11 @@
           <el-input v-model="attr.attrName"></el-input>
         </el-form-item>
       </el-form>
-      <el-button type="primary" class="el-icon-plus" @click="addAttrValue"
+      <el-button
+        type="primary"
+        class="el-icon-plus"
+        @click="addAttrValue"
+        :disabled="!attr.attrName"
         >添加属性</el-button
       >
       <el-table
@@ -113,6 +128,11 @@ export default {
         attrName: "",
         attrValueList: [],
       },
+      category: {
+        category1Id: "",
+        category2Id: "",
+        category3Id: "",
+      },
     };
   },
   methods: {
@@ -155,7 +175,13 @@ export default {
     },
 
     async save() {
-      const result = await this.$API.attrs.saveAttrInfo(this.attr);
+      const isAdd = !this.attr.id;
+      const data = this.attr;
+      if (isAdd) {
+        data.categoryId = this.category.category3Id;
+        data.categoryLevel = 3;
+      }
+      const result = await this.$API.attrs.saveAttrInfo(data);
       if (result.code === 200) {
         this.$message.success("更新数据成功~~~");
         this.isShowList = true;
@@ -170,13 +196,24 @@ export default {
     },
 
     async del(row) {
-      console.log(row);
+      console.log(row, 233333);
       const result = await this.$API.attrs.delAttr(row.id);
       if (result.code === 200) {
         this.getAttrList(this.category);
       } else {
         this.$message.error(result.message);
       }
+    },
+
+    async add() {
+      this.isShowList = false;
+      this.attr.attrName = "";
+      this.attr.attrValueList = [];
+      // console.log(this.attrList, 4444444);
+      // const result = await this.attrList.push();
+      // this.$nextTick(() => {
+      //   this.$refs.input.focus();
+      // });
     },
   },
   components: {
