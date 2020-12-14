@@ -1,6 +1,6 @@
 <template>
   <div>
-    <category @change="getAttrList" :disabled="!isShowList" />
+    <Category @change="getAttrList" :disabled="!isShowList" />
 
     <el-card v-show="isShowList" style="margin-top: 20px">
       <el-button
@@ -115,8 +115,8 @@
 </template>
 
 <script>
-import Index from "@/components/Breadcrumb/index.vue";
-import category from "./category";
+
+import Category from "../../../components/Category";
 
 export default {
   name: "AttrList",
@@ -217,7 +217,7 @@ export default {
     },
   },
   components: {
-    category,
+    Category,
   },
 };
 </script>
