@@ -1,6 +1,6 @@
 <template>
   <div>
-    <Category @change="getAttrList" :disabled="!isShowList" />
+    <Category :disabled="!isShowList" />
 
     <el-card v-show="isShowList" style="margin-top: 20px">
       <el-button
@@ -115,8 +115,7 @@
 </template>
 
 <script>
-
-import Category from "../../../components/Category";
+import Category from "@/components/Category";
 
 export default {
   name: "AttrList",
@@ -148,6 +147,8 @@ export default {
       if (result.code === 200) {
         // console.log(result.data);
         // 子组件给父组件传递参数 自定义事件
+        this.$message("1111");
+
         this.attrList = result.data;
       } else {
         this.$message.error(result.message);
@@ -218,6 +219,9 @@ export default {
   },
   components: {
     Category,
+  },
+  mounted() {
+    this.$bus.$on("change", this.getAttrList);
   },
 };
 </script>
