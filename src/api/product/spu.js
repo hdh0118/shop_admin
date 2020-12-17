@@ -39,7 +39,7 @@ export default {
   //添加spu
   saveSpu(spu) {
     return request({
-      url: `${api_name}/savespuInfo`,
+      url: `${api_name}/saveSpuInfo`,
       method: "POST",
       data: spu
     });

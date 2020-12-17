@@ -50,7 +50,7 @@
           <span>只能上传jpg/png文件，且不超过50kb</span>
         </el-form-item>
 
-        <el-form-item label="销售属性" prop="saleAttrList">
+        <el-form-item label="销售属性" prop="sale">
           <el-select
             :placeholder="`还剩${filterSaleAttrList.length}个未选择`"
             value=""
@@ -70,77 +70,77 @@
             @click="addSpuSaleAttr"
             >添加销售属性</el-button
           >
+          <el-table
+            :data="spuSaleAttrList"
+            border
+            style="width: 100%; margin: 20px 0"
+          >
+            <el-table-column
+              type="index"
+              label="序号"
+              width="80px"
+              align="center"
+              prop="id"
+            ></el-table-column>
+            <el-table-column
+              prop="saleAttrName"
+              label="属性名称"
+              width="150"
+            ></el-table-column>
+            <el-table-column label="属性值列表">
+              <template v-slot="{ row, $index }">
+                <el-tag
+                  @close="delTag(i, row)"
+                  closable
+                  style="margin-right: 5px"
+                  v-for="(attrVal, i) in row.spuSaleAttrValueList"
+                  :key="attrVal.id"
+                  >{{ attrVal.saleAttrValueName }}</el-tag
+                >
+
+                <el-input
+                  class="input-new-tag"
+                  v-if="row.edit"
+                  size="mini"
+                  style="width: 100px"
+                  ref="input"
+                  autofocus
+                  v-model="saleAttrValueText"
+                  @blur="editCompleted(row, $index)"
+                  @keyup.enter.native="editCompleted(row, $index)"
+                ></el-input>
+
+                <el-button
+                  class="button-new-tag"
+                  v-else
+                  size="mini"
+                  style="width: 100px"
+                  icon="el-icon-plus"
+                  @click="edit(row)"
+                  >添加</el-button
+                >
+              </template>
+            </el-table-column>
+            <el-table-column label="操作" width="150">
+              <template v-slot="{ row, $index }">
+                <el-popconfirm
+                  @onConfirm="delSpuSaleAttr($index)"
+                  :title="`确定删除 ${row.saleAttrName} 吗？`"
+                  ><el-button
+                    type="danger"
+                    icon="el-icon-delete"
+                    size="mini"
+                    slot="reference"
+                  ></el-button
+                ></el-popconfirm>
+              </template>
+            </el-table-column>
+          </el-table>
         </el-form-item>
       </el-form>
 
-      <el-table
-        :data="spuSaleAttrList"
-        border
-        style="width: 100%; margin: 20px 0"
-      >
-        <el-table-column
-          type="index"
-          label="序号"
-          width="80px"
-          align="center"
-          prop="id"
-        ></el-table-column>
-        <el-table-column
-          prop="saleAttrName"
-          label="属性名称"
-          width="150"
-        ></el-table-column>
-        <el-table-column label="属性值列表">
-          <template v-slot="{ row, $index }">
-            <el-tag
-              @close="delTag(i, row)"
-              closable
-              style="margin-right: 5px"
-              v-for="(attrVal, i) in row.spuSaleAttrValueList"
-              :key="attrVal.id"
-              >{{ attrVal.saleAttrValueName }}</el-tag
-            >
-
-            <el-input
-              class="input-new-tag"
-              v-if="row.edit"
-              size="mini"
-              style="width: 100px"
-              ref="input"
-              autofocus
-              v-model="saleAttrValueText"
-              @blur="editCompleted(row, $index)"
-              @keyup.enter.native="editCompleted(row, $index)"
-            ></el-input>
-
-            <el-button
-              class="button-new-tag"
-              v-else
-              size="mini"
-              style="width: 100px"
-              icon="el-icon-plus"
-              @click="edit(row)"
-              >添加</el-button
-            >
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="150">
-          <template v-slot="{ row, $index }">
-            <el-popconfirm
-              @onConfirm="delSpuSaleAttr($index)"
-              :title="`确定删除 ${row.saleAttrName} 吗？`"
-              ><el-button
-                type="danger"
-                icon="el-icon-delete"
-                size="mini"
-                slot="reference"
-              ></el-button
-            ></el-popconfirm>
-          </template>
-        </el-table-column>
-      </el-table>
       <el-button type="primary" @click="save">保存</el-button>
-      <el-button>取消</el-button>
+      <el-button @click="$emit('showList', spu.category3Id)">取消</el-button>
 
       <el-dialog :visible.sync="visible">
         <img width="100%" :src="previewImageUrl" alt="img" />
@@ -187,9 +187,9 @@ export default {
     formatImageList() {
       return this.imageList.map((img) => {
         return {
+          uid: img.uid || img.id,
           name: img.imgName,
           url: img.imgUrl,
-          uid: img.uid || img.id,
         };
       });
     },
@@ -206,13 +206,14 @@ export default {
     },
 
     saleValidator(rule, value, callback) {
+      console.log(1);
       if (this.spuSaleAttrList.length === 0) {
         callback(new Error("请选择至少一个销售属性"));
         return;
       }
 
       const isNotOk = this.spuSaleAttrList.some(
-        (sale) => sale.saleAttrValueText.length === 0
+        (sale) => sale.spuSaleAttrValueList.length === 0
       );
 
       if (isNotOk) {
@@ -309,6 +310,7 @@ export default {
 
     handleAvatarSuccess(res, file) {
       this.imageList.push({
+        uid: file.uid,
         imgName: file.name,
         imgUrl: res.data,
         spuId: this.spu.id,
@@ -358,11 +360,17 @@ export default {
             spuImageList: this.imageList,
             spuSaleAttrList: this.spuSaleAttrList,
           };
+          console.log(spu, 34567);
+          let result;
+          if (this.spu.id) {
+            result = await this.$API.spu.updateSpu(spu);
+          } else {
+            result = await this.$API.spu.saveSpu(spu);
+          }
 
-          const result = await this.$API.spu.updateSpu(spu);
           if (result.code === 200) {
             this.$emit("showList", this.spu.category3Id);
-            this.$message.success("更新spu成功~");
+            this.$message.success(`${this.spu.id ? "更新" : "添加"}spu成功~`);
           } else {
             this.$message.error(result.message);
           }
@@ -372,10 +380,12 @@ export default {
   },
 
   async mounted() {
+    if (this.spu.id) {
+      this.getSpuImageList();
+      this.getSpuSaleAttrList();
+    }
     this.getTrademarkList();
-    this.getSpuImageList();
     this.getSaleAttrList();
-    this.getSpuSaleAttrList();
   },
 };
 </script>
